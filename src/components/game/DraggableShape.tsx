@@ -82,7 +82,7 @@ export const DraggableShape: React.FC<DraggableShapeProps> = ({ shape, disabled,
         return (
             <div
                 ref={setNodeRef}
-                className="opacity-30 grayscale p-5" // Added p-5 (20px) padding to maintain size consistency
+                className="opacity-30 grayscale"
             >
                 {renderShapeStructure()}
             </div>
@@ -94,7 +94,7 @@ export const DraggableShape: React.FC<DraggableShapeProps> = ({ shape, disabled,
             {...listeners}
             {...attributes}
             className={cn(
-                "touch-none transition-transform p-5", // Added p-5 (20px) padding to increase hit area
+                "touch-none transition-transform",
                 !isDragDisabled && "cursor-grab active:cursor-grabbing hover:scale-105",
                 isDragDisabled && "opacity-50 grayscale cursor-not-allowed"
             )}

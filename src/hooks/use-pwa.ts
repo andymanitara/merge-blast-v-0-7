@@ -14,17 +14,9 @@ export function usePWA() {
       setDeferredPrompt(e as BeforeInstallPromptEvent);
       setIsInstallable(true);
     };
-    const installedHandler = () => {
-      // App was installed (either via button or browser menu)
-      setIsInstallable(false);
-      setDeferredPrompt(null);
-      console.log('App installed successfully');
-    };
     window.addEventListener('beforeinstallprompt', handler);
-    window.addEventListener('appinstalled', installedHandler);
     return () => {
       window.removeEventListener('beforeinstallprompt', handler);
-      window.removeEventListener('appinstalled', installedHandler);
     };
   }, []);
   const install = async () => {

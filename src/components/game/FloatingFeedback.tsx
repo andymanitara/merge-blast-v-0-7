@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useGameStore } from '@/store/gameStore';
 import { GameEffect } from '@/types/game';
@@ -7,20 +7,11 @@ import { AlertTriangle, Lock } from 'lucide-react';
 export const FloatingFeedback: React.FC = () => {
     const lastEffect = useGameStore(state => state.lastEffect);
     const [effects, setEffects] = useState<GameEffect[]>([]);
-    const isMounted = useRef(true);
-    useEffect(() => {
-        isMounted.current = true;
-        return () => {
-            isMounted.current = false;
-        };
-    }, []);
     useEffect(() => {
         if (lastEffect) {
             setEffects(prev => [...prev, lastEffect]);
             setTimeout(() => {
-                if (isMounted.current) {
-                    setEffects(prev => prev.filter(e => e.id !== lastEffect.id));
-                }
+                setEffects(prev => prev.filter(e => e.id !== lastEffect.id));
             }, 1500);
         }
     }, [lastEffect]);
@@ -129,9 +120,9 @@ export const FloatingFeedback: React.FC = () => {
                             <motion.div
                                 key={effect.id}
                                 initial={{ opacity: 0, scale: 0.5, x: 0 }}
-                                animate={{
-                                    opacity: 1,
-                                    scale: 1.5,
+                                animate={{ 
+                                    opacity: 1, 
+                                    scale: 1.5, 
                                     x: [-5, 5, -5, 5, 0],
                                     rotate: [-5, 5, -5, 5, 0]
                                 }}

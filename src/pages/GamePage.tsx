@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
     DndContext,
     DragOverlay,
@@ -29,9 +29,7 @@ import { cn } from '@/lib/utils';
 import { playGameSound } from '@/lib/audioSynth';
 import { MobileOptimizer } from '@/components/game/MobileOptimizer';
 import { useIsMobile } from '@/hooks/use-mobile';
-const MOBILE_DRAG_OFFSET = 60; // Reduced from 80 for better proximity
-const MOBILE_UNIT_SIZE = 48;
-const SHAPE_PADDING = 20; // p-5 = 20px
+const MOBILE_DRAG_OFFSET = 80;
 export function GamePage() {
     const initializeGame = useGameStore(state => state.initializeGame);
     const placeShape = useGameStore(state => state.placeShape);
@@ -45,33 +43,41 @@ export function GamePage() {
     const highestChain = useGameStore(state => state.highestChain);
     const graphicsQuality = useGameStore(state => state.graphicsQuality);
     const combo = useGameStore(state => state.combo);
+    const lastEffect = useGameStore(state => state.lastEffect);
     const [activeShape, setActiveShape] = useState<GameShape | null>(null);
     const [ghostAnchor, setGhostAnchor] = useState<{r: number, c: number} | null>(null);
+    const [isShaking, setIsShaking] = useState(false);
     const isMobile = useIsMobile();
     useEffect(() => {
         if (nextShapes.length === 0) {
             initializeGame();
         }
     }, [nextShapes.length, initializeGame]);
-    // Memoize activation constraint to prevent sensor re-instantiation
-    const activationConstraint = useMemo(() => ({
-        distance: 3,
-    }), []);
+    // Screen shake effect for Power Bursts
+    useEffect(() => {
+        if (lastEffect?.type === 'powerBurst') {
+            setIsShaking(true);
+            const timer = setTimeout(() => setIsShaking(false), 500);
+            return () => clearTimeout(timer);
+        }
+    }, [lastEffect]);
     // Optimized PointerSensor for instant mobile response
     const sensors = useSensors(
         useSensor(PointerSensor, {
-            activationConstraint,
+            activationConstraint: {
+                distance: 3,
+            },
         })
     );
-    const handleDragStart = useCallback((event: DragStartEvent) => {
+    const handleDragStart = (event: DragStartEvent) => {
         const { active } = event;
         const shape = active.data.current?.shape as GameShape;
         if (shape) {
             setActiveShape(shape);
             playGameSound('click');
         }
-    }, []);
-    const handleDragOver = useCallback((event: DragOverEvent) => {
+    };
+    const handleDragOver = (event: DragOverEvent) => {
         const { over } = event;
         if (!over) {
             setGhostAnchor(null);
@@ -83,8 +89,8 @@ export function GamePage() {
         } else {
             setGhostAnchor(null);
         }
-    }, []);
-    const handleDragEnd = useCallback((event: DragEndEvent) => {
+    };
+    const handleDragEnd = (event: DragEndEvent) => {
         const { active, over } = event;
         setActiveShape(null);
         setGhostAnchor(null);
@@ -98,7 +104,7 @@ export function GamePage() {
             const shapeId = active.id as string;
             placeShape(row, col, shapeId);
         }
-    }, [placeShape]);
+    };
     const handleToggleMenu = () => {
         playGameSound('click');
         toggleMenu();
@@ -113,41 +119,27 @@ export function GamePage() {
         }
         return transform;
     };
-    // Custom Collision Strategy to compensate for the visual offset and anchor alignment
+    // Custom Collision Strategy to compensate for the visual offset
     const customCollisionStrategy: CollisionDetection = useCallback((args) => {
-        const { active, collisionRect } = args;
-        const shape = active.data.current?.shape as GameShape;
-        // On mobile, we want the collision to happen exactly where the visual shape's anchor (0,0) is.
-        if (isMobile && shape && collisionRect) {
-            // 1. Calculate Anchor Position relative to Shape Container
-            // The container is sized based on the min/max offsets.
-            // We need to find where (0,0) is relative to the top-left of the container.
-            const minR = Math.min(...shape.offsets.map(o => o.r));
-            const minC = Math.min(...shape.offsets.map(o => o.c));
-            // The shape container includes padding (p-5 = 20px).
-            // The (0,0) tile is at:
-            // Left: PADDING + (0 - minC) * MOBILE_UNIT_SIZE
-            // Top: PADDING + (0 - minR) * MOBILE_UNIT_SIZE
-            // We want the center of that tile.
-            const anchorRelX = SHAPE_PADDING + (0 - minC) * MOBILE_UNIT_SIZE + (MOBILE_UNIT_SIZE / 2);
-            const anchorRelY = SHAPE_PADDING + (0 - minR) * MOBILE_UNIT_SIZE + (MOBILE_UNIT_SIZE / 2);
-            // 2. Calculate World Position of Anchor Center
-            // collisionRect.left/top is the position of the draggable container (at finger level)
-            // We need to adjust Y by the visual offset (MOBILE_DRAG_OFFSET) to match the lifted shape
-            const anchorWorldX = collisionRect.left + anchorRelX;
-            const anchorWorldY = collisionRect.top + anchorRelY;
-            // 3. Create a point rect for collision detection at the exact visual anchor center
-            const pointRect = {
-                top: anchorWorldY,
-                bottom: anchorWorldY + 1,
-                left: anchorWorldX,
-                right: anchorWorldX + 1,
+        // On mobile, we want the collision to happen exactly where the visual shape is.
+        // The visual shape is offset by MOBILE_DRAG_OFFSET upwards from the finger.
+        // So we calculate the target point based on the pointer coordinates minus the offset.
+        if (isMobile && args.pointerCoordinates) {
+            const { x, y } = args.pointerCoordinates;
+            const offsetY = y - MOBILE_DRAG_OFFSET;
+            // Create a small rect centered at the offset position
+            // We use a small size (e.g., 1px) to act as a point cursor
+            const offsetRect = {
+                top: offsetY,
+                bottom: offsetY + 1,
+                left: x,
+                right: x + 1,
                 width: 1,
                 height: 1,
             };
             return closestCenter({
                 ...args,
-                collisionRect: pointRect as any,
+                collisionRect: offsetRect as any, // Cast to satisfy type if needed
             });
         }
         return closestCenter(args);
@@ -164,7 +156,7 @@ export function GamePage() {
         const width = maxC - minC + 1;
         const height = maxR - minR + 1;
         // Dynamic unit size to match GameControls queue
-        const UNIT_SIZE = isMobile ? MOBILE_UNIT_SIZE : 64;
+        const UNIT_SIZE = isMobile ? 48 : 64;
         const GAP = 0; // Seamless grid means 0 gap
         const containerStyle = {
             width: width * UNIT_SIZE + (width - 1) * GAP,
@@ -234,7 +226,8 @@ export function GamePage() {
                 <GameEffects />
                 {/* Main Container - Flex Column with Constraints */}
                 <div className={cn(
-                    "relative z-10 flex flex-col items-center max-w-lg mx-auto w-full h-full py-2 sm:py-4 gap-2"
+                    "relative z-10 flex flex-col items-center max-w-lg mx-auto w-full h-full py-2 sm:py-4 gap-2",
+                    isShaking && "animate-shake"
                 )}>
                     {/* Header / HUD - Shrink 0 to preserve size */}
                     <header className="w-full flex items-center justify-between px-4 shrink-0">
@@ -286,7 +279,7 @@ export function GamePage() {
                         {/* Danger Meter Bar */}
                         <div className={cn(
                             "flex-1 h-3 sm:h-4 bg-slate-800 rounded-full overflow-hidden border border-white/10 relative transition-all duration-300",
-                            isCritical && "ring-1 ring-red-500/50"
+                            isCritical && "animate-shake ring-1 ring-red-500/50"
                         )}>
                             <div 
                                 className={cn(
