@@ -45,24 +45,14 @@ export function GamePage() {
     const highestChain = useGameStore(state => state.highestChain);
     const graphicsQuality = useGameStore(state => state.graphicsQuality);
     const combo = useGameStore(state => state.combo);
-    const lastEffect = useGameStore(state => state.lastEffect);
     const [activeShape, setActiveShape] = useState<GameShape | null>(null);
     const [ghostAnchor, setGhostAnchor] = useState<{r: number, c: number} | null>(null);
-    const [isShaking, setIsShaking] = useState(false);
     const isMobile = useIsMobile();
     useEffect(() => {
         if (nextShapes.length === 0) {
             initializeGame();
         }
     }, [nextShapes.length, initializeGame]);
-    // Screen shake effect for Power Bursts
-    useEffect(() => {
-        if (lastEffect?.type === 'powerBurst') {
-            setIsShaking(true);
-            const timer = setTimeout(() => setIsShaking(false), 500);
-            return () => clearTimeout(timer);
-        }
-    }, [lastEffect]);
     // Optimized PointerSensor for instant mobile response
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -224,9 +214,9 @@ export function GamePage() {
             <MobileOptimizer />
             {/* Danger Vignette - Only show in High Quality mode */}
             {isHighQuality && isCritical && (
-                <div 
+                <div
                     className="absolute inset-0 pointer-events-none z-0 transition-opacity duration-500 gpu-accelerated"
-                    style={{ 
+                    style={{
                         background: `radial-gradient(circle at center, transparent 50%, rgba(220, 38, 38, ${dangerPercent / 150}))`,
                         opacity: 1
                     }}
@@ -242,8 +232,7 @@ export function GamePage() {
                 <GameEffects />
                 {/* Main Container - Flex Column with Constraints */}
                 <div className={cn(
-                    "relative z-10 flex flex-col items-center max-w-lg mx-auto w-full h-full py-2 sm:py-4 gap-2",
-                    isShaking && "animate-shake"
+                    "relative z-10 flex flex-col items-center max-w-lg mx-auto w-full h-full py-2 sm:py-4 gap-2"
                 )}>
                     {/* Header / HUD - Shrink 0 to preserve size */}
                     <header className="w-full flex items-center justify-between px-4 shrink-0">
@@ -295,13 +284,13 @@ export function GamePage() {
                         {/* Danger Meter Bar */}
                         <div className={cn(
                             "flex-1 h-3 sm:h-4 bg-slate-800 rounded-full overflow-hidden border border-white/10 relative transition-all duration-300",
-                            isCritical && "animate-shake ring-1 ring-red-500/50"
+                            isCritical && "ring-1 ring-red-500/50"
                         )}>
-                            <div 
+                            <div
                                 className={cn(
                                     "h-full transition-all duration-500 gpu-accelerated",
-                                    isCritical ? "bg-gradient-to-r from-red-600 to-red-500" : 
-                                    isWarning ? "bg-gradient-to-r from-orange-500 to-orange-400" : 
+                                    isCritical ? "bg-gradient-to-r from-red-600 to-red-500" :
+                                    isWarning ? "bg-gradient-to-r from-orange-500 to-orange-400" :
                                     "bg-gradient-to-r from-emerald-500 to-emerald-400"
                                 )}
                                 style={{ width: `${dangerPercent}%` }}

@@ -88,14 +88,6 @@
         transform: translateZ(0);
         will-change: transform;
     }
-    @keyframes shake {
-        0%, 100% { transform: translateX(0); }
-        10%, 30%, 50%, 70%, 90% { transform: translateX(-2px); }
-        20%, 40%, 60%, 80% { transform: translateX(2px); }
-    }
-    .animate-shake {
-        animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both infinite;
-    }
     @keyframes shimmer {
         0% { transform: translateX(-100%) skewX(-15deg); }
         100% { transform: translateX(200%) skewX(-15deg); }
@@ -110,7 +102,6 @@
     .animate-float {
         animation: float 6s ease-in-out infinite;
     }
-
     /* Hide scrollbar for Chrome, Safari and Opera */
     .no-scrollbar::-webkit-scrollbar {
         display: none;
