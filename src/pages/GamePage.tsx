@@ -30,6 +30,8 @@ import { playGameSound } from '@/lib/audioSynth';
 import { MobileOptimizer } from '@/components/game/MobileOptimizer';
 import { useIsMobile } from '@/hooks/use-mobile';
 const MOBILE_DRAG_OFFSET = 80;
+const MOBILE_UNIT_SIZE = 48;
+const SHAPE_PADDING = 20; // p-5 = 20px
 export function GamePage() {
     const initializeGame = useGameStore(state => state.initializeGame);
     const placeShape = useGameStore(state => state.placeShape);
@@ -119,27 +121,41 @@ export function GamePage() {
         }
         return transform;
     };
-    // Custom Collision Strategy to compensate for the visual offset
+    // Custom Collision Strategy to compensate for the visual offset and anchor alignment
     const customCollisionStrategy: CollisionDetection = useCallback((args) => {
-        // On mobile, we want the collision to happen exactly where the visual shape is.
-        // The visual shape is offset by MOBILE_DRAG_OFFSET upwards from the finger.
-        // So we calculate the target point based on the pointer coordinates minus the offset.
-        if (isMobile && args.pointerCoordinates) {
-            const { x, y } = args.pointerCoordinates;
-            const offsetY = y - MOBILE_DRAG_OFFSET;
-            // Create a small rect centered at the offset position
-            // We use a small size (e.g., 1px) to act as a point cursor
-            const offsetRect = {
-                top: offsetY,
-                bottom: offsetY + 1,
-                left: x,
-                right: x + 1,
+        const { active, collisionRect } = args;
+        const shape = active.data.current?.shape as GameShape;
+        // On mobile, we want the collision to happen exactly where the visual shape's anchor (0,0) is.
+        if (isMobile && shape && collisionRect) {
+            // 1. Calculate Anchor Position relative to Shape Container
+            // The container is sized based on the min/max offsets.
+            // We need to find where (0,0) is relative to the top-left of the container.
+            const minR = Math.min(...shape.offsets.map(o => o.r));
+            const minC = Math.min(...shape.offsets.map(o => o.c));
+            // The shape container includes padding (p-5 = 20px).
+            // The (0,0) tile is at:
+            // Left: PADDING + (0 - minC) * UNIT_SIZE
+            // Top: PADDING + (0 - minR) * UNIT_SIZE
+            // We want the center of that tile.
+            const anchorRelX = SHAPE_PADDING + (0 - minC) * MOBILE_UNIT_SIZE + (MOBILE_UNIT_SIZE / 2);
+            const anchorRelY = SHAPE_PADDING + (0 - minR) * MOBILE_UNIT_SIZE + (MOBILE_UNIT_SIZE / 2);
+            // 2. Calculate World Position of Anchor Center
+            // collisionRect.left/top is the position of the draggable container (without visual offset)
+            // We apply the MOBILE_DRAG_OFFSET to Y because the visual is lifted
+            const anchorWorldX = collisionRect.left + anchorRelX;
+            const anchorWorldY = collisionRect.top + anchorRelY - MOBILE_DRAG_OFFSET;
+            // 3. Create a point rect for collision detection at the exact visual anchor center
+            const pointRect = {
+                top: anchorWorldY,
+                bottom: anchorWorldY + 1,
+                left: anchorWorldX,
+                right: anchorWorldX + 1,
                 width: 1,
                 height: 1,
             };
             return closestCenter({
                 ...args,
-                collisionRect: offsetRect as any, // Cast to satisfy type if needed
+                collisionRect: pointRect as any,
             });
         }
         return closestCenter(args);
@@ -156,7 +172,7 @@ export function GamePage() {
         const width = maxC - minC + 1;
         const height = maxR - minR + 1;
         // Dynamic unit size to match GameControls queue
-        const UNIT_SIZE = isMobile ? 48 : 64;
+        const UNIT_SIZE = isMobile ? MOBILE_UNIT_SIZE : 64;
         const GAP = 0; // Seamless grid means 0 gap
         const containerStyle = {
             width: width * UNIT_SIZE + (width - 1) * GAP,
@@ -320,7 +336,7 @@ export function GamePage() {
                     <MenuOverlay />
                     <HowToPlayModal />
                 </div>
-                <DragOverlay 
+                <DragOverlay
                     modifiers={isMobile ? [snapToOffset] : []}
                     dropAnimation={{
                         duration: 200,
