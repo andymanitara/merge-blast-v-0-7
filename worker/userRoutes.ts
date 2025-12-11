@@ -63,7 +63,7 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
             data: list
         });
     });
-    // Restore Leaderboard (Client-Side Hydration)
+    // Restore Leaderboard (Client-Side Hydration / Gossip Protocol)
     app.post('/api/leaderboard/restore', async (c) => {
         try {
             const body = await c.req.json<{
@@ -84,7 +84,6 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
             currentList.forEach(e => entryMap.set(e.userId, e));
             // 2. Merge restored data
             // We only update if the restored entry has a higher score or doesn't exist.
-            // This prevents overwriting recent progress with stale cache, but allows restoring lost data.
             data.forEach(restoredEntry => {
                 const existing = entryMap.get(restoredEntry.userId);
                 if (!existing) {
@@ -94,13 +93,34 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
                         entryMap.set(restoredEntry.userId, restoredEntry);
                     }
                 }
+                // OPTIONAL: Ensure profile exists (Basic hydration to prevent 404s)
+                // If the worker restarted, PROFILES is empty. We can at least restore basic info.
+                if (!PROFILES.has(restoredEntry.userId)) {
+                     PROFILES.set(restoredEntry.userId, {
+                        userId: restoredEntry.userId,
+                        name: restoredEntry.name,
+                        avatar: restoredEntry.avatar,
+                        country: restoredEntry.country,
+                        stats: { 
+                            totalGamesPlayed: 0, 
+                            totalMerges: 0, 
+                            highestChain: 0, 
+                            dangerMeter: 0, 
+                            bestScore: restoredEntry.score, 
+                            dailyBestScore: 0 
+                        },
+                        achievements: [],
+                        joinedAt: new Date().toISOString()
+                     });
+                }
             });
             // 3. Convert back to array
             const mergedList = Array.from(entryMap.values());
             // 4. Sort and Slice
             mergedList.sort((a, b) => b.score - a.score);
-            if (mergedList.length > 50) {
-                mergedList.length = 50;
+            // Increased limit to 100 to prevent aggressive truncation
+            if (mergedList.length > 100) {
+                mergedList.length = 100;
             }
             LEADERBOARD[mode] = mergedList;
             return c.json({ success: true, count: mergedList.length });
@@ -144,7 +164,7 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
                     country
                 });
             } else {
-                // Create new if doesn't exist (edge case, e.g. if profile wasn't created via score submit yet)
+                // Create new if doesn't exist
                 PROFILES.set(userId, {
                     userId,
                     name,
@@ -238,9 +258,9 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
             }
             // Sort descending
             list.sort((a, b) => b.score - a.score);
-            // Keep top 50
-            if (list.length > 50) {
-                list.length = 50;
+            // Keep top 100 (Increased from 50)
+            if (list.length > 100) {
+                list.length = 100;
             }
             // 2. Update User Profile
             const existingProfile = PROFILES.get(user.id);
