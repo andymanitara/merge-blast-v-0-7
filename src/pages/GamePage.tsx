@@ -29,7 +29,7 @@ import { cn } from '@/lib/utils';
 import { playGameSound } from '@/lib/audioSynth';
 import { MobileOptimizer } from '@/components/game/MobileOptimizer';
 import { useIsMobile } from '@/hooks/use-mobile';
-const MOBILE_DRAG_OFFSET = 80;
+const MOBILE_DRAG_OFFSET = 60; // Reduced from 80 for better proximity
 const MOBILE_UNIT_SIZE = 48;
 const SHAPE_PADDING = 20; // p-5 = 20px
 export function GamePage() {
@@ -140,8 +140,8 @@ export function GamePage() {
             const anchorRelX = SHAPE_PADDING + (0 - minC) * MOBILE_UNIT_SIZE + (MOBILE_UNIT_SIZE / 2);
             const anchorRelY = SHAPE_PADDING + (0 - minR) * MOBILE_UNIT_SIZE + (MOBILE_UNIT_SIZE / 2);
             // 2. Calculate World Position of Anchor Center
-            // collisionRect.left/top is the position of the draggable container (without visual offset)
-            // We apply the MOBILE_DRAG_OFFSET to Y because the visual is lifted
+            // collisionRect.left/top is the position of the draggable container (at finger level)
+            // We need to adjust Y by the visual offset (MOBILE_DRAG_OFFSET) to match the lifted shape
             const anchorWorldX = collisionRect.left + anchorRelX;
             const anchorWorldY = collisionRect.top + anchorRelY - MOBILE_DRAG_OFFSET;
             // 3. Create a point rect for collision detection at the exact visual anchor center
