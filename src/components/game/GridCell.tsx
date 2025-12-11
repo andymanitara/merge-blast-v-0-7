@@ -18,8 +18,7 @@ interface GridCellProps {
     connections?: ShapeConnections;
     ghostConnections?: ShapeConnections;
 }
-// Memoized GridCell to prevent unnecessary re-renders
-export const GridCell = memo<GridCellProps>(({
+const GridCellComponent: React.FC<GridCellProps> = ({
     row,
     col,
     cell,
@@ -45,7 +44,6 @@ export const GridCell = memo<GridCellProps>(({
     };
     const isLocked = cell?.type === ShapeType.Locked;
     const isHighQuality = graphicsQuality === 'high';
-    // Outer container is now transparent and gap-less
     return (
         <div
             ref={setNodeRef}
@@ -124,5 +122,6 @@ export const GridCell = memo<GridCellProps>(({
             </AnimatePresence>
         </div>
     );
-});
+};
+export const GridCell = memo(GridCellComponent);
 GridCell.displayName = 'GridCell';

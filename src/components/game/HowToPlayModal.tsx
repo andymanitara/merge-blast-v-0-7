@@ -2,7 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '@/store/gameStore';
 import { Button } from '@/components/ui/button';
-import { X, Hand, ArrowRight, Zap, AlertTriangle, Check } from 'lucide-react';
+import { X, Hand, ArrowRight, Zap, AlertTriangle, Check, Lock, Skull } from 'lucide-react';
 import { Shape } from './Shape';
 import { ShapeType } from '@/lib/constants';
 import { GameShape } from '@/types/game';
@@ -104,7 +104,7 @@ export const HowToPlayModal: React.FC = () => {
                                     <div className="space-y-2">
                                         <h4 className="text-lg font-bold text-white">Match Immediately!</h4>
                                         <p className="text-slate-300 font-medium leading-relaxed text-sm">
-                                            Fragile shapes (marked with <AlertTriangle className="w-3 h-3 inline text-yellow-400"/>) are unstable.
+                                            Fragile shapes (marked with <AlertTriangle className="w-3 h-3 inline text-yellow-400"/>) are unstable. 
                                             You <span className="text-yellow-400 font-bold">MUST</span> match them immediately upon placement.
                                         </p>
                                     </div>
@@ -117,7 +117,7 @@ export const HowToPlayModal: React.FC = () => {
                                     <div className="space-y-3 w-full">
                                         <h4 className="text-lg font-bold text-white">Crack & Lock</h4>
                                         <p className="text-slate-300 font-medium leading-relaxed text-sm">
-                                            If a Fragile Shape doesn't match, it <span className="text-red-400 font-bold">CRACKS</span>.
+                                            If a Fragile Shape doesn't match, it <span className="text-red-400 font-bold">CRACKS</span>. 
                                             On the next turn, cracked tiles become <span className="font-bold text-slate-200">LOCKED</span> permanently!
                                         </p>
                                         <div className="flex gap-6 justify-center bg-black/40 p-4 rounded-2xl border border-white/5 shadow-inner">
@@ -145,7 +145,43 @@ export const HowToPlayModal: React.FC = () => {
                                     </div>
                                 </div>
                             </div>
-                            {/* Section 3: Power Bursts */}
+                            {/* Section 3: Danger & Locks (New) */}
+                            <div className="space-y-4">
+                                <h3 className="text-lg font-black text-red-400 uppercase tracking-wider border-b border-white/10 pb-2 flex items-center gap-2">
+                                    <span className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.8)]" />
+                                    Danger & Locks
+                                </h3>
+                                {/* Danger Meter */}
+                                <div className="flex gap-4 items-start group">
+                                    <div className="flex-shrink-0 w-12 h-12 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-500 group-hover:scale-110 transition-transform duration-300">
+                                        <Skull className="w-6 h-6" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <h4 className="text-lg font-bold text-white">The Danger Meter</h4>
+                                        <p className="text-slate-300 font-medium leading-relaxed text-sm">
+                                            Every turn without a merge increases <span className="text-red-400 font-bold">DANGER</span>. 
+                                            High danger causes <span className="text-slate-200 font-bold">LOCKS</span> to spawn randomly on empty tiles!
+                                        </p>
+                                    </div>
+                                </div>
+                                {/* Removing Locks */}
+                                <div className="flex gap-4 items-start group">
+                                    <div className="flex-shrink-0 w-12 h-12 rounded-2xl bg-slate-500/10 border border-slate-500/20 flex items-center justify-center text-slate-400 group-hover:scale-110 transition-transform duration-300">
+                                        <Lock className="w-6 h-6" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <h4 className="text-lg font-bold text-white">Breaking Locks</h4>
+                                        <p className="text-slate-300 font-medium leading-relaxed text-sm">
+                                            Locks block your path. Destroy them using:
+                                        </p>
+                                        <ul className="list-disc list-inside text-sm text-slate-300 space-y-1 ml-1">
+                                            <li><span className="text-red-400 font-bold">Pulse Ability</span> (Earned by chaining)</li>
+                                            <li><span className="text-amber-400 font-bold">Power Bursts</span> (Blast or Purify)</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            {/* Section 4: Power Bursts */}
                             <div className="space-y-4">
                                 <h3 className="text-lg font-black text-amber-400 uppercase tracking-wider border-b border-white/10 pb-2 flex items-center gap-2">
                                     <span className="w-2 h-2 rounded-full bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.8)]" />
@@ -159,7 +195,7 @@ export const HowToPlayModal: React.FC = () => {
                                     <div className="space-y-2">
                                         <h4 className="text-lg font-bold text-white">Chain Reactions</h4>
                                         <p className="text-slate-300 font-medium leading-relaxed text-sm">
-                                            Create a chain of <span className="text-amber-400 font-bold">5+ matches</span> to trigger a random <span className="font-bold text-white">POWER BURST</span>!
+                                            Create a chain of <span className="text-amber-400 font-bold">5+ matches</span> to trigger a random <span className="font-bold text-white">POWER BURST</span>! 
                                             Bursts can clear areas, remove locks, or lower danger.
                                         </p>
                                     </div>
