@@ -18,7 +18,7 @@ export const GameControls: React.FC = () => {
     const { setNodeRef, isOver } = useDroppable({
         id: 'queue-zone',
     });
-    // Optimized unit size for mobile to fit 2x2 shapes (96px) within h-32 (128px) container
+    // Optimized unit size for mobile to fit 2x2 shapes (96px) within container
     // Mobile: 48px, Desktop: 64px
     const unitSize = isMobile ? 48 : 64;
     return (
@@ -80,9 +80,9 @@ export const GameControls: React.FC = () => {
                     "flex items-center glass-panel rounded-2xl sm:rounded-3xl shadow-lg w-full transition-colors duration-300",
                     "overflow-x-auto no-scrollbar", // Enable horizontal scroll, hide scrollbar
                     "justify-evenly", // Equal spacing
-                    // Mobile: h-32 (128px) & p-2 to fit 96px shapes comfortably
-                    // Desktop: h-40 (160px) & p-4
-                    isMobile ? "h-32 p-2" : "h-40 p-4",
+                    // Mobile: h-40 (160px) & p-2 to fit 96px shapes + 40px padding comfortably
+                    // Desktop: h-48 (192px) & p-4
+                    isMobile ? "h-40 p-2" : "h-48 p-4",
                     isOver && "bg-red-500/10 border-red-500/30"
                 )}>
                     <LayoutGroup>
