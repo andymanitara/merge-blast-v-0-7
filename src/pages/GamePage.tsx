@@ -143,7 +143,7 @@ export function GamePage() {
             // collisionRect.left/top is the position of the draggable container (at finger level)
             // We need to adjust Y by the visual offset (MOBILE_DRAG_OFFSET) to match the lifted shape
             const anchorWorldX = collisionRect.left + anchorRelX;
-            const anchorWorldY = collisionRect.top + anchorRelY - MOBILE_DRAG_OFFSET;
+            const anchorWorldY = collisionRect.top + anchorRelY;
             // 3. Create a point rect for collision detection at the exact visual anchor center
             const pointRect = {
                 top: anchorWorldY,
