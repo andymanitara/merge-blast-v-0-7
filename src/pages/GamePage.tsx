@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
     DndContext,
     DragOverlay,
@@ -53,23 +53,25 @@ export function GamePage() {
             initializeGame();
         }
     }, [nextShapes.length, initializeGame]);
+    // Memoize activation constraint to prevent sensor re-instantiation
+    const activationConstraint = useMemo(() => ({
+        distance: 3,
+    }), []);
     // Optimized PointerSensor for instant mobile response
     const sensors = useSensors(
         useSensor(PointerSensor, {
-            activationConstraint: {
-                distance: 3,
-            },
+            activationConstraint,
         })
     );
-    const handleDragStart = (event: DragStartEvent) => {
+    const handleDragStart = useCallback((event: DragStartEvent) => {
         const { active } = event;
         const shape = active.data.current?.shape as GameShape;
         if (shape) {
             setActiveShape(shape);
             playGameSound('click');
         }
-    };
-    const handleDragOver = (event: DragOverEvent) => {
+    }, []);
+    const handleDragOver = useCallback((event: DragOverEvent) => {
         const { over } = event;
         if (!over) {
             setGhostAnchor(null);
@@ -81,8 +83,8 @@ export function GamePage() {
         } else {
             setGhostAnchor(null);
         }
-    };
-    const handleDragEnd = (event: DragEndEvent) => {
+    }, []);
+    const handleDragEnd = useCallback((event: DragEndEvent) => {
         const { active, over } = event;
         setActiveShape(null);
         setGhostAnchor(null);
@@ -96,7 +98,7 @@ export function GamePage() {
             const shapeId = active.id as string;
             placeShape(row, col, shapeId);
         }
-    };
+    }, [placeShape]);
     const handleToggleMenu = () => {
         playGameSound('click');
         toggleMenu();
@@ -124,8 +126,8 @@ export function GamePage() {
             const minC = Math.min(...shape.offsets.map(o => o.c));
             // The shape container includes padding (p-5 = 20px).
             // The (0,0) tile is at:
-            // Left: PADDING + (0 - minC) * UNIT_SIZE
-            // Top: PADDING + (0 - minR) * UNIT_SIZE
+            // Left: PADDING + (0 - minC) * MOBILE_UNIT_SIZE
+            // Top: PADDING + (0 - minR) * MOBILE_UNIT_SIZE
             // We want the center of that tile.
             const anchorRelX = SHAPE_PADDING + (0 - minC) * MOBILE_UNIT_SIZE + (MOBILE_UNIT_SIZE / 2);
             const anchorRelY = SHAPE_PADDING + (0 - minR) * MOBILE_UNIT_SIZE + (MOBILE_UNIT_SIZE / 2);
@@ -214,9 +216,9 @@ export function GamePage() {
             <MobileOptimizer />
             {/* Danger Vignette - Only show in High Quality mode */}
             {isHighQuality && isCritical && (
-                <div
+                <div 
                     className="absolute inset-0 pointer-events-none z-0 transition-opacity duration-500 gpu-accelerated"
-                    style={{
+                    style={{ 
                         background: `radial-gradient(circle at center, transparent 50%, rgba(220, 38, 38, ${dangerPercent / 150}))`,
                         opacity: 1
                     }}
@@ -286,11 +288,11 @@ export function GamePage() {
                             "flex-1 h-3 sm:h-4 bg-slate-800 rounded-full overflow-hidden border border-white/10 relative transition-all duration-300",
                             isCritical && "ring-1 ring-red-500/50"
                         )}>
-                            <div
+                            <div 
                                 className={cn(
                                     "h-full transition-all duration-500 gpu-accelerated",
-                                    isCritical ? "bg-gradient-to-r from-red-600 to-red-500" :
-                                    isWarning ? "bg-gradient-to-r from-orange-500 to-orange-400" :
+                                    isCritical ? "bg-gradient-to-r from-red-600 to-red-500" : 
+                                    isWarning ? "bg-gradient-to-r from-orange-500 to-orange-400" : 
                                     "bg-gradient-to-r from-emerald-500 to-emerald-400"
                                 )}
                                 style={{ width: `${dangerPercent}%` }}
@@ -325,7 +327,7 @@ export function GamePage() {
                     <MenuOverlay />
                     <HowToPlayModal />
                 </div>
-                <DragOverlay
+                <DragOverlay 
                     modifiers={isMobile ? [snapToOffset] : []}
                     dropAnimation={{
                         duration: 200,
