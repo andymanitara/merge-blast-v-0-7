@@ -80,7 +80,7 @@ export const api = {
             // Keep top 100 locally
             if (mergedList.length > 100) mergedList.length = 100;
             // 4. Gossip / Restore Protocol
-            // If our merged list is "better" than what the server gave us, 
+            // If our merged list is "better" than what the server gave us,
             // the server might have lost data (restart). We push our data back.
             const serverTopScore = serverEntries.length > 0 ? serverEntries[0].score : 0;
             const mergedTopScore = mergedList.length > 0 ? mergedList[0].score : 0;
@@ -167,30 +167,35 @@ export const api = {
                 // 2. Update Local Cache Immediately
                 // This ensures that even if the server wipes before we fetch again,
                 // we have this new score recorded locally to restore it later.
-                const cacheKey = `cached_leaderboard_${mode}`;
-                const cachedStr = localStorage.getItem(cacheKey);
-                let cachedEntries: LeaderboardEntry[] = cachedStr ? JSON.parse(cachedStr) : [];
-                // Check if user already exists in cache
-                const existingIndex = cachedEntries.findIndex(e => e.userId === user.id);
-                const newEntry: LeaderboardEntry = {
-                    userId: user.id,
-                    name: user.name,
-                    avatar: user.avatar,
-                    country: user.country,
-                    score: score,
-                    date: new Date().toISOString()
-                };
-                if (existingIndex !== -1) {
-                    if (score >= cachedEntries[existingIndex].score) {
-                        cachedEntries[existingIndex] = newEntry;
+                try {
+                    const cacheKey = `cached_leaderboard_${mode}`;
+                    const cachedStr = localStorage.getItem(cacheKey);
+                    let cachedEntries: LeaderboardEntry[] = cachedStr ? JSON.parse(cachedStr) : [];
+                    // Check if user already exists in cache
+                    const existingIndex = cachedEntries.findIndex(e => e.userId === user.id);
+                    const newEntry: LeaderboardEntry = {
+                        userId: user.id,
+                        name: user.name,
+                        avatar: user.avatar,
+                        country: user.country,
+                        score: score,
+                        date: new Date().toISOString()
+                    };
+                    if (existingIndex !== -1) {
+                        if (score >= cachedEntries[existingIndex].score) {
+                            cachedEntries[existingIndex] = newEntry;
+                        }
+                    } else {
+                        cachedEntries.push(newEntry);
                     }
-                } else {
-                    cachedEntries.push(newEntry);
+                    // Sort and save
+                    cachedEntries.sort((a, b) => b.score - a.score);
+                    if (cachedEntries.length > 100) cachedEntries.length = 100;
+                    localStorage.setItem(cacheKey, JSON.stringify(cachedEntries));
+                } catch (cacheError) {
+                    console.warn('Local cache update failed', cacheError);
+                    // Do not fail the whole operation if local cache fails (e.g. quota exceeded)
                 }
-                // Sort and save
-                cachedEntries.sort((a, b) => b.score - a.score);
-                if (cachedEntries.length > 100) cachedEntries.length = 100;
-                localStorage.setItem(cacheKey, JSON.stringify(cachedEntries));
             }
             return data.success;
         } catch (error) {
